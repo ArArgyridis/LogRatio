@@ -1,4 +1,4 @@
-/*This is part of the program RangeDoppler Geocoding
+/*This is part of the program LogRatio
    Copyright (C) 2017  Argyros Argyridis arargyridis@gmail.com
 
    This program is free software: you can redistribute it and/or modify
