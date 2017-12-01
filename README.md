@@ -1,6 +1,6 @@
 # LogRatio
-An algorithm created to compute the log ratio of radar images using GDAL and OpenMP
-The program curently accepts the input created from the georeferencer after image calibration.
+An algorithm created to compute changes from the log ratio using GDAL and OpenMP
+The program curently accepts the input created from the RangeDoppler Terrain Correction after image calibration.
 
 Usage: LogRatio image1 image2 polarization threshold output_file
 
