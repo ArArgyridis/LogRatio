@@ -1,4 +1,4 @@
-# LogRatio
+# LogRatioChangeDetection
 An algorithm created to compute changes from the log ratio using GDAL and OpenMP
 The program curently accepts the input created from the RangeDoppler Terrain Correction after image calibration.
 
