@@ -19,7 +19,7 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     if (argc < 5){
-        cout <<"Usage: LogRatio image1 image2 polarization threshold output_file \n"
+        cout <<"Usage: LogRatioChangeDetection image1 image2 polarization threshold output_file \n"
                "polarization values: VV or VH\n"
                "output file should be in .tif format\n";
         return -1;
