@@ -43,7 +43,7 @@ int LogRatio::createOutputDataset() {
 
     cout <<"Creating output dataset: " << outputFile << endl;
     GDALDataset *tmpDataset;
-    tmpDataset = poDriver->Create(outputFile.c_str(), imageWidth, imageHeight, 1, GDT_Byte, NULL);
+    tmpDataset = poDriver->Create(outputFile.c_str(), imageWidth, imageHeight, 1, GDT_Float32, NULL);
     if (tmpDataset == nullptr){
         throw 3;
     }
@@ -64,7 +64,19 @@ int LogRatio::createOutputDataset() {
     }
 }
 
-LogRatio::LogRatio(char *img1, char *img2, char *polar, float threshold, char *out): inImage1(img1), inImage2(img2), polarization(polar),threshold(threshold), outputFile(out),
+LogRatio::LogRatio(char *img1, char *img2, char *polar, char *out): inImage1(img1), inImage2(img2), polarization(polar),threshold(null), outputFile(out),
+dateImage1(nullptr), dateImage2(nullptr), xBlockCount(0), yBlockCount(0), xBlockSize(0), yBlockSize(0) {
+    //checking if polarization value is proper
+    boost::algorithm::to_lower(polarization);
+
+    //reading images
+    GDALAllRegister();
+    dateImage1 = (GDALDataset*)GDALOpen( inImage1.c_str(), GA_ReadOnly );
+    dateImage2 = (GDALDataset*)GDALOpen( inImage2.c_str(), GA_ReadOnly );
+}
+
+
+LogRatio::LogRatio(char *img1, char *img2, char *polar, char *out, float threshold): inImage1(img1), inImage2(img2), polarization(polar),threshold(threshold), outputFile(out),
 dateImage1(nullptr), dateImage2(nullptr), xBlockCount(0), yBlockCount(0), xBlockSize(0), yBlockSize(0) {
     //checking if polarization value is proper
     boost::algorithm::to_lower(polarization);
@@ -92,9 +104,9 @@ int LogRatio::compute() {
         GDALRasterBand *d2Band;
         d2Band = d2Dataset->GetRasterBand(d2BandNumber);
 
-        GByte *outBuffer;
+        float *outBuffer;
         float *d1Buffer, *d2Buffer;
-        outBuffer = new GByte[xBlockSize*yBlockSize];
+        outBuffer = new float[xBlockSize*yBlockSize];
         d1Buffer =  new float[xBlockSize*yBlockSize];
         d2Buffer = new float[xBlockSize*yBlockSize];
 
@@ -122,7 +134,10 @@ int LogRatio::compute() {
                         int pos = xBlockSize*y + x;
                         if (d1Buffer[pos] > 0 && d2Buffer[pos] > 0 ) {
                             double ratio = log(d2Buffer[pos]/d1Buffer[pos]);
-                             outBuffer[pos] = ( (ratio > threshold) || (ratio < -threshold ) );
+                            if (threshold != null)
+                                outBuffer[pos] = ( (ratio > threshold) || (ratio < -threshold ) );
+                            else
+                                outBuffer[pos] = ratio;
                         }
                     }
                 }

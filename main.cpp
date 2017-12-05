@@ -19,22 +19,28 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
     if (argc < 5){
-        cout <<"Usage: LogRatioChangeDetection image1 image2 polarization threshold output_file \n"
+        cout <<"Usage: LogRatioChangeDetection image1 image2 polarization output_file threshold (optional)  \n"
                "polarization values: VV or VH\n"
                "output file should be in .tif format\n";
         return -1;
     }
 
     cout << "Starting Change Detection\n";
-    LogRatio obj(argv[1], argv[2], argv[3], stod(argv[4]), argv[5]);
-    int ret = obj.init();
+    LogRatio *obj;
+
+    if (argc == 5)
+        obj = new LogRatio (argv[1], argv[2], argv[3], argv[4]);
+    else if (argc == 6)
+        obj = new LogRatio (argv[1], argv[2], argv[3], argv[4], stod(argv[5]));
+    int ret = obj->init();
     if (ret == -1)
         return ret;
 
-    ret = obj.compute();
+    ret = obj->compute();
     if (ret == -1)
         return ret;
 
+    delete obj;
     cout << "Change Detection Finished\n" << endl;
     return 0;
 }

@@ -18,6 +18,8 @@
 #include "functions.h"
 #include <gdal_priv.h>
 #include <memory>
+
+const float null = -999999.0;
 class LogRatio
 {
 private:
@@ -28,7 +30,8 @@ private:
     int createOutputDataset();
 
 public:
-    LogRatio(char* img1, char* img2, char* polar, float threshold, char* out );
+    LogRatio(char* img1, char* img2, char* polar, char* out);
+    LogRatio(char* img1, char* img2, char* polar, char* out, float threshold );
     int init();
     int compute();
     ~LogRatio();
