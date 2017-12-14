@@ -113,25 +113,28 @@ int LogRatio::compute() {
         fill(d1Buffer, d1Buffer + xBlockSize*yBlockSize, 0.0);
         fill(d2Buffer, d2Buffer + xBlockSize*yBlockSize, 0.0);
 
-#pragma omp for schedule(dynamic, 300) collapse(2)
+#pragma omp for schedule(dynamic, 1) collapse(2)
+        //cout << xBlockCount <<"\t" <<yBlockCount <<"\t" <<xBlockSize<<"\t" <<yBlockSize << endl;
         for(xBlock = 0; xBlock < xBlockCount; xBlock++) {
             for(yBlock = 0; yBlock < yBlockCount; yBlock++) {
                 fill(outBuffer, outBuffer + xBlockSize*yBlockSize, 0.0);
                 //reading block data
-                d1Band->AdviseRead(xBlock, yBlock, xBlockSize, yBlockSize, xBlockSize, yBlockSize, GDT_Float32, NULL);
-                d1Band->RasterIO(GF_Read, xBlock, yBlock, xBlockSize, yBlockSize, d1Buffer, xBlockSize, yBlockSize, GDT_Float32, 0, 0);
+                //cout << xBlock <<"\t" <<yBlock << endl;
+                d1Band->AdviseRead(xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, xBlockSize, yBlockSize, GDT_Float32, NULL);
+                d1Band->RasterIO(GF_Read, xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, d1Buffer, xBlockSize, yBlockSize, GDT_Float32, 0, 0);
 
-                d2Band->AdviseRead(xBlock, yBlock, xBlockSize, yBlockSize, xBlockSize, yBlockSize, GDT_Float32, NULL);
-                d2Band->RasterIO(GF_Read, xBlock, yBlock, xBlockSize, yBlockSize, d2Buffer, xBlockSize, yBlockSize, GDT_Float32, 0, 0);
+                d2Band->AdviseRead(xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, xBlockSize, yBlockSize, GDT_Float32, NULL);
+                d2Band->RasterIO(GF_Read, xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, d2Buffer, xBlockSize, yBlockSize, GDT_Float32, 0, 0);
 
                 /*
                 d1Band->ReadBlock(xBlock, yBlock, d1Buffer);
                 d2Band->ReadBlock(xBlock, yBlock, d2Buffer);
                 */
-
-                for (register int x = 0; x < xBlockSize; x++) {
-                    for (register int y = 0; y <yBlockSize; y++) {
+                for (register int y = 0; y <yBlockSize; y++) {
+                    for (register int x = 0; x < xBlockSize; x++) {
+                   
                         int pos = xBlockSize*y + x;
+                        //cout << pos << "\t" << x<< "\t" << y << "\t" << xBlockSize << endl;
                         if (d1Buffer[pos] > 0 && d2Buffer[pos] > 0 ) {
                             double ratio = log(d2Buffer[pos]/d1Buffer[pos]);
                             if (threshold != null)
