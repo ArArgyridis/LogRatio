@@ -96,66 +96,73 @@ int LogRatio::compute() {
         GDALRasterBand *outBand;
         outBand = outDataset->GetRasterBand(1);
 
-        d1Dataset = (GDALDataset*)(GDALOpen(inImage1.c_str(), GA_Update));
+        d1Dataset = (GDALDataset*)(GDALOpen(inImage1.c_str(), GA_ReadOnly));
         GDALRasterBand *d1Band;
         d1Band = d1Dataset->GetRasterBand(d1BandNumber);
 
-        d2Dataset = (GDALDataset*)(GDALOpen(inImage2.c_str(), GA_Update));
+        d2Dataset = (GDALDataset*)(GDALOpen(inImage2.c_str(), GA_ReadOnly));
         GDALRasterBand *d2Band;
         d2Band = d2Dataset->GetRasterBand(d2BandNumber);
 
-        float *outBuffer;
+
         float *d1Buffer, *d2Buffer;
-        outBuffer = new float[xBlockSize*yBlockSize];
+
         d1Buffer =  new float[xBlockSize*yBlockSize];
         d2Buffer = new float[xBlockSize*yBlockSize];
-
-        fill(d1Buffer, d1Buffer + xBlockSize*yBlockSize, 0.0);
-        fill(d2Buffer, d2Buffer + xBlockSize*yBlockSize, 0.0);
 
 #pragma omp for schedule(dynamic, 1) collapse(2)
         //cout << xBlockCount <<"\t" <<yBlockCount <<"\t" <<xBlockSize<<"\t" <<yBlockSize << endl;
         for(xBlock = 0; xBlock < xBlockCount; xBlock++) {
             for(yBlock = 0; yBlock < yBlockCount; yBlock++) {
-                fill(outBuffer, outBuffer + xBlockSize*yBlockSize, 0.0);
-                //reading block data
-                //cout << xBlock <<"\t" <<yBlock << endl;
-                d1Band->AdviseRead(xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, xBlockSize, yBlockSize, GDT_Float32, NULL);
-                d1Band->RasterIO(GF_Read, xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, d1Buffer, xBlockSize, yBlockSize, GDT_Float32, 0, 0);
+                int xActualBlockSize, yActualBlockSize;
+                outBand->GetActualBlockSize(xBlock, yBlock, &xActualBlockSize, &yActualBlockSize);
 
-                d2Band->AdviseRead(xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, xBlockSize, yBlockSize, GDT_Float32, NULL);
-                d2Band->RasterIO(GF_Read, xBlock*xBlockSize, yBlock*yBlockSize, xBlockSize, yBlockSize, d2Buffer, xBlockSize, yBlockSize, GDT_Float32, 0, 0);
-
+                float *outBuffer;
+                outBuffer = new float[xActualBlockSize*yActualBlockSize];
                 /*
-                d1Band->ReadBlock(xBlock, yBlock, d1Buffer);
-                d2Band->ReadBlock(xBlock, yBlock, d2Buffer);
+                fill(d1Buffer, d1Buffer + xBlockSize*yBlockSize, 0.0);
+                fill(d2Buffer, d2Buffer + xBlockSize*yBlockSize, 0.0);
+                fill(outBuffer, outBuffer + xActualBlockSize*yActualBlockSize, 0.0);
                 */
-                for (register int y = 0; y <yBlockSize; y++) {
-                    for (register int x = 0; x < xBlockSize; x++) {
-                   
-                        int pos = xBlockSize*y + x;
-                        //cout << pos << "\t" << x<< "\t" << y << "\t" << xBlockSize << endl;
+                //reading block data
+
+                //cout << xBlock <<"\t" <<yBlock << "\t" << xBlockSize<<"\t"<< yBlockSize <<"\t" << xActualBlockSize << "\t" << yActualBlockSize << endl;
+
+                d1Band->AdviseRead(xBlock*xBlockSize, yBlock*yBlockSize, xActualBlockSize, yActualBlockSize, xActualBlockSize, yActualBlockSize, GDT_Float32, NULL);
+                d1Band->RasterIO(GF_Read, xBlock*xBlockSize, yBlock*yBlockSize, xActualBlockSize, yActualBlockSize, d1Buffer, xActualBlockSize, yActualBlockSize, GDT_Float32, 0, 0);
+
+                d2Band->AdviseRead(xBlock*xBlockSize, yBlock*yBlockSize, xActualBlockSize, yActualBlockSize, xActualBlockSize, yActualBlockSize, GDT_Float32, NULL);
+                d2Band->RasterIO(GF_Read, xBlock*xBlockSize, yBlock*yBlockSize, xActualBlockSize, yActualBlockSize, d2Buffer, xActualBlockSize, yActualBlockSize, GDT_Float32, 0, 0);
+
+                for (register int y = 0; y < yActualBlockSize; y++) {
+                    for (register int x = 0; x < xActualBlockSize; x++) {
+                        int pos = xActualBlockSize*y + x;
                         if (d1Buffer[pos] > 0 && d2Buffer[pos] > 0 ) {
-                            double ratio = log(d2Buffer[pos]/d1Buffer[pos]);
+                            double ratio = log(d2Buffer[pos]/d1Buffer[pos]);                            
                             if (threshold != null)
-                                outBuffer[pos] = ( (ratio > threshold) || (ratio < -threshold ) );
+                                outBuffer[pos] = ( (ratio > threshold) || (ratio < -threshold) );
                             else
                                 outBuffer[pos] = ratio;
                         }
                     }
                 }
                 outBand->WriteBlock(xBlock, yBlock, outBuffer);
+                //cout <<xBlock*xActualBlockSize <<"\t" << yBlock*yBlockSize << "\t" << yBlock <<"\t"<<yActualBlockSize << endl;
+                //outBand->RasterIO(GF_Write, xBlock*xBlockSize, yBlock*yBlockSize, xActualBlockSize, yActualBlockSize, d1Buffer, xActualBlockSize, yActualBlockSize, GDT_Float32, 0, 0);
+                delete[] outBuffer;
+                outBuffer = nullptr;
             }
         }
         GDALClose(outDataset);
-        delete[] outBuffer;
-        outBuffer = nullptr;
 
         delete d1Buffer;
         d1Buffer = nullptr;
 
         delete d2Buffer;
         d2Buffer = nullptr;
+
+
+
     }
     return 0;
 }
